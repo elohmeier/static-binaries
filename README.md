@@ -7,7 +7,11 @@ Please see the [releases page](https://github.com/elohmeier/static-binaries/rele
 
 ## List of Tools
 
+- [binutils](https://www.gnu.org/software/binutils/)
+- [curl](https://curl.se/)
 - [Nmap](https://nmap.org/)
+- [nnn](https://github.com/jarun/nnn)
 - [Python 2](https://www.python.org/)
+- [socat](http://www.dest-unreach.org/socat)
 - [tcpdump](https://www.tcpdump.org/)
 

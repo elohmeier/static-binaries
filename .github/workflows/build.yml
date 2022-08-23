@@ -8,10 +8,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v17
       - run: nix --version
-      - run: nix build .#hello
+      - run: nix build .#pkgsCross.musl64.pkgsStatic.nmap
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            result/bin/hello
+            result/bin/nmap

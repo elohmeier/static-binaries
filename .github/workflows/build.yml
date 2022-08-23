@@ -1,16 +1,18 @@
 name: "Build"
 on:
   push:
-    tags:
-      - 1.*
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v17
-      - run: nix --version
+      - uses: cachix/cachix-action@v10
+        with:
+          name: static-binaries
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
       - run: nix build
+      - run: nix path-info --all | cachix push static-binaries
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')

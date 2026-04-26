@@ -17,6 +17,20 @@
             "python-2.7.18.12"
           ];
           config.packageOverrides = (pkgs: {
+            python2 =
+              if pkgs.stdenv.hostPlatform.isStatic && pkgs.lib.versionAtLeast pkgs.lib.version "23.05" then
+                pkgs.python2.overrideAttrs (old:
+                  let
+                    oldEnv = old.env or { };
+                  in
+                  {
+                    env = oldEnv // {
+                      NIX_CFLAGS_COMPILE = (oldEnv.NIX_CFLAGS_COMPILE or "") + " -std=gnu17";
+                    };
+                  })
+              else
+                pkgs.python2;
+
             liblinear =
               if pkgs.stdenv.hostPlatform.isStatic then
                 pkgs.liblinear.overrideAttrs (old: {

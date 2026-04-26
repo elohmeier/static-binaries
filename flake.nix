@@ -13,6 +13,15 @@
       packageFor = system: (with import nixpkgs
         {
           inherit system;
+          config.packageOverrides = (pkgs: {
+            nnn = pkgs.nnn.overrideAttrs (old: {
+              buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.musl-fts ];
+              env = (old.env or { }) // {
+                NIX_CFLAGS_COMPILE = "-I${pkgs.musl-fts}/include";
+                NIX_LDFLAGS = "-lfts";
+              };
+            });
+          });
         };
         let
           releaseNotes = writeText "release.txt" ''

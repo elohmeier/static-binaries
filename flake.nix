@@ -13,14 +13,6 @@
       packageFor = system: (with import nixpkgs
         {
           inherit system;
-          config.packageOverrides = (pkgs: {
-            # remove when https://github.com/NixOS/nixpkgs/pull/187914 is merged
-            nnn = pkgs.nnn.overrideAttrs (old: {
-              buildInputs = old.buildInputs ++ [ pkgs.musl-fts ];
-              NIX_CFLAGS_COMPILE = "-I${pkgs.musl-fts}/include";
-              NIX_LDFLAGS = "-lfts";
-            });
-          });
         };
         let
           releaseNotes = writeText "release.txt" ''

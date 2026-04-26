@@ -1,21 +1,74 @@
-name: "Build"
+name: Build
+
 on:
   push:
+    branches:
+      - master
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: cachix/install-nix-action@v17
-      - uses: cachix/cachix-action@v10
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
-          name: static-binaries
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-      - run: nix build
-      - run: nix path-info --all | cachix push static-binaries
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Enable Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v13
+
+      - name: Update flake lock
+        if: github.event_name != 'push'
+        id: update
+        run: |
+          nix flake update
+
+          if git diff --quiet -- flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        if: github.event_name == 'push' || steps.update.outputs.changed == 'true'
+        run: nix build .
+
+      - name: Commit lockfile
+        if: github.event_name != 'push' && steps.update.outputs.changed == 'true'
+        id: commit
+        run: |
+          tag="v$(date -u +%Y.%m.%d)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.lock
+          git commit -m "chore: update nixpkgs for ${tag}"
+          git tag -a "$tag" -m "$tag"
+          git push origin HEAD:master
+          git push origin "$tag"
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
       - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          body_path: result/release.txt
-          files: result/bin/*
+        if: github.event_name != 'push' && steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.commit.outputs.tag }}" result/bin/* \
+            --notes-file result/release.txt \
+            --title "${{ steps.commit.outputs.tag }}" \
+            --verify-tag

@@ -15,3 +15,9 @@ Please see the [releases page](https://github.com/elohmeier/static-binaries/rele
 - [socat](http://www.dest-unreach.org/socat)
 - [tcpdump](https://www.tcpdump.org/)
 
+
+## Releases
+
+The GitHub Actions workflow updates `flake.lock` weekly. When the lockfile changes, it builds the bundle, commits the updated lockfile, tags the commit as `vYYYY.MM.DD`, and publishes the binaries as release assets.
+
+Pushes to `master` run a build only. Weekly runs that do not change `flake.lock` skip the release.

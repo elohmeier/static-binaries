@@ -10,9 +10,7 @@
         "aarch64-linux"
       ];
       forAllSystems = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
-    in
-    {
-      defaultPackage = forAllSystems (system: (with import nixpkgs
+      packageFor = system: (with import nixpkgs
         {
           inherit system;
           config.packageOverrides = (pkgs: {
@@ -39,7 +37,7 @@
           mkdir -p $out/bin
 
           cp ${pkgsCross.musl32.pkgsStatic.binutils}/bin/objdump $out/bin/objdump-x86
-          cp ${pkgsCross.musl32.pkgsStatic.binutils}/bin/strings $out/bin/string-x86
+          cp ${pkgsCross.musl32.pkgsStatic.binutils}/bin/strings $out/bin/strings-x86
           cp ${pkgsCross.musl32.pkgsStatic.curl}/bin/curl $out/bin/curl-x86
           cp ${pkgsCross.musl32.pkgsStatic.nmap}/bin/nmap $out/bin/nmap-x86
           cp ${pkgsCross.musl32.pkgsStatic.nnn}/bin/.nnn-wrapped $out/bin/nnn-x86
@@ -47,7 +45,7 @@
           cp ${pkgsCross.musl32.pkgsStatic.socat}/bin/socat $out/bin/socat-x86
           cp ${pkgsCross.musl32.pkgsStatic.tcpdump}/bin/tcpdump $out/bin/tcpdump-x86
           cp ${pkgsCross.musl64.pkgsStatic.binutils}/bin/objdump $out/bin/objdump-x64
-          cp ${pkgsCross.musl64.pkgsStatic.binutils}/bin/strings $out/bin/string-x64
+          cp ${pkgsCross.musl64.pkgsStatic.binutils}/bin/strings $out/bin/strings-x64
           cp ${pkgsCross.musl64.pkgsStatic.curl}/bin/curl $out/bin/curl-x64
           cp ${pkgsCross.musl64.pkgsStatic.nmap}/bin/nmap $out/bin/nmap-x64
           cp ${pkgsCross.musl64.pkgsStatic.nnn}/bin/.nnn-wrapped $out/bin/nnn-x64
@@ -57,6 +55,13 @@
 
           cp ${releaseNotes} $out/release.txt
         ''
-      ));
+      );
+    in
+    {
+      packages = forAllSystems (system: {
+        default = packageFor system;
+      });
+
+      defaultPackage = forAllSystems packageFor;
     };
 }

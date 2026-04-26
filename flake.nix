@@ -14,13 +14,18 @@
         {
           inherit system;
           config.packageOverrides = (pkgs: {
-            nnn = pkgs.nnn.overrideAttrs (old: {
-              buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.musl-fts ];
-              env = (old.env or { }) // {
+            nnn = pkgs.nnn.overrideAttrs (old:
+              {
+                buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.musl-fts ];
+              } // (if pkgs.lib.versionAtLeast pkgs.lib.version "23.05" then {
+                env = (old.env or { }) // {
+                  NIX_CFLAGS_COMPILE = "-I${pkgs.musl-fts}/include";
+                  NIX_LDFLAGS = "-lfts";
+                };
+              } else {
                 NIX_CFLAGS_COMPILE = "-I${pkgs.musl-fts}/include";
                 NIX_LDFLAGS = "-lfts";
-              };
-            });
+              }));
           });
         };
         let

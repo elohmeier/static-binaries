@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DETSYS_IDS_TELEMETRY: disabled
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -26,10 +28,17 @@ jobs:
           fetch-depth: 0
 
       - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@v3
+        uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          determinate: false
+          diagnostic-endpoint: ""
 
       - name: Enable Magic Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@v13
+        with:
+          use-gha-cache: enabled
+          use-flakehub: disabled
+          diagnostic-endpoint: ""
 
       - name: Update flake lock
         if: github.event_name != 'push'

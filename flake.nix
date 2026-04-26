@@ -17,6 +17,35 @@
             "python-2.7.18.12"
           ];
           config.packageOverrides = (pkgs: {
+            liblinear =
+              if pkgs.stdenv.hostPlatform.isStatic then
+                pkgs.liblinear.overrideAttrs (old: {
+                  postPatch = (old.postPatch or "") + ''
+                    cat >> Makefile <<'EOF'
+
+                    liblinear.a: linear.o newton.o blas/blas.a
+                    	$(AR) rcs liblinear.a linear.o newton.o blas/blas.a
+                    EOF
+                  '';
+                  buildFlags = [
+                    "liblinear.a"
+                    "predict"
+                    "train"
+                  ];
+                  installPhase = ''
+                    runHook preInstall
+
+                    install -Dt $out/lib liblinear.a
+                    install -D train $bin/bin/liblinear-train
+                    install -D predict $bin/bin/liblinear-predict
+                    install -Dm444 -t $dev/include linear.h
+
+                    runHook postInstall
+                  '';
+                })
+              else
+                pkgs.liblinear;
+
             nnn = pkgs.nnn.overrideAttrs (old:
               {
                 buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.musl-fts ];

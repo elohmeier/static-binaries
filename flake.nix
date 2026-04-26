@@ -13,6 +13,9 @@
       packageFor = system: (with import nixpkgs
         {
           inherit system;
+          config.permittedInsecurePackages = [
+            "python-2.7.18.12"
+          ];
           config.packageOverrides = (pkgs: {
             nnn = pkgs.nnn.overrideAttrs (old:
               {

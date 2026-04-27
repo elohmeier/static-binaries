@@ -10,7 +10,7 @@
         "aarch64-linux"
       ];
       forAllSystems = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
-      packageFor = system: (with import nixpkgs
+      packagesFor = system: (with import nixpkgs
         {
           inherit system;
           config.permittedInsecurePackages = [
@@ -243,23 +243,47 @@
                   (bin: "cp ${bin.path} $out/bin/${bin.name}-${tool.package.version}-${target}")
                   tool.bins)
               (tools pkgs);
+          buildTarget = target: pkgs:
+            runCommand "static-binaries-${target}" { } ''
+              mkdir -p $out/bin
+
+              ${copyTools target pkgs}
+
+              cp ${releaseNotes} $out/release.txt
+            '';
+          targetPackages = {
+            "i686-unknown-linux-musl" = pkgsCross.musl32.pkgsStatic;
+            "x86_64-unknown-linux-musl" =
+              if system == "x86_64-linux" then
+                pkgsStatic
+              else
+                pkgsCross.musl64.pkgsStatic;
+            "aarch64-unknown-linux-musl" =
+              if system == "aarch64-linux" then
+                pkgsStatic
+              else
+                pkgsCross.aarch64-multiplatform-musl.pkgsStatic;
+          };
         in
-        runCommand "static-binaries" { } ''
-          mkdir -p $out/bin
+        {
+          release-i686-unknown-linux-musl = buildTarget "i686-unknown-linux-musl" targetPackages."i686-unknown-linux-musl";
+          release-x86_64-unknown-linux-musl = buildTarget "x86_64-unknown-linux-musl" targetPackages."x86_64-unknown-linux-musl";
+          release-aarch64-unknown-linux-musl = buildTarget "aarch64-unknown-linux-musl" targetPackages."aarch64-unknown-linux-musl";
+          default = runCommand "static-binaries" { } ''
+            mkdir -p $out/bin
 
-          ${copyTools "i686-unknown-linux-musl" pkgsCross.musl32.pkgsStatic}
-          ${copyTools "x86_64-unknown-linux-musl" pkgsCross.musl64.pkgsStatic}
-          ${copyTools "aarch64-unknown-linux-musl" pkgsCross.aarch64-multiplatform-musl.pkgsStatic}
+            ${copyTools "i686-unknown-linux-musl" targetPackages."i686-unknown-linux-musl"}
+            ${copyTools "x86_64-unknown-linux-musl" targetPackages."x86_64-unknown-linux-musl"}
+            ${copyTools "aarch64-unknown-linux-musl" targetPackages."aarch64-unknown-linux-musl"}
 
-          cp ${releaseNotes} $out/release.txt
-        ''
+            cp ${releaseNotes} $out/release.txt
+          '';
+        }
       );
     in
     {
-      packages = forAllSystems (system: {
-        default = packageFor system;
-      });
+      packages = forAllSystems packagesFor;
 
-      defaultPackage = forAllSystems packageFor;
+      defaultPackage = forAllSystems (system: (packagesFor system).default);
     };
 }

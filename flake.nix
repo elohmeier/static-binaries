@@ -72,6 +72,14 @@
                 NIX_CFLAGS_COMPILE = "-I${pkgs.musl-fts}/include";
                 NIX_LDFLAGS = "-lfts";
               }));
+
+            rsync =
+              if pkgs.stdenv.hostPlatform.isStatic then
+                pkgs.rsync.overrideAttrs (_: {
+                  doCheck = false;
+                })
+              else
+                pkgs.rsync;
           });
         };
         let

@@ -75,35 +75,173 @@
           });
         };
         let
-          releaseNotes = writeText "release.txt" ''
-            - binutils v${binutils.version}
-            - curl v${curl.version}
-            - nmap v${nmap.version}
-            - nnn v${nnn.version}
-            - python2 v${python2.version}
-            - socat v${socat.version}
-            - tcpdump v${tcpdump.version}
-          '';
+          tools = pkgs: [
+            {
+              label = "binutils";
+              package = pkgs.binutils;
+              bins = [
+                { name = "objdump"; path = "${pkgs.binutils}/bin/objdump"; }
+                { name = "strings"; path = "${pkgs.binutils}/bin/strings"; }
+              ];
+            }
+            {
+              label = "busybox";
+              package = pkgs.busybox;
+              bins = [
+                { name = "busybox"; path = "${pkgs.busybox}/bin/busybox"; }
+              ];
+            }
+            {
+              label = "curl";
+              package = pkgs.curl;
+              bins = [
+                { name = "curl"; path = "${pkgs.curl}/bin/curl"; }
+              ];
+            }
+            {
+              label = "drill";
+              package = pkgs.ldns;
+              bins = [
+                { name = "drill"; path = "${pkgs.ldns}/bin/drill"; }
+              ];
+            }
+            {
+              label = "file";
+              package = pkgs.file;
+              bins = [
+                { name = "file"; path = "${pkgs.file}/bin/file"; }
+              ];
+            }
+            {
+              label = "gzip";
+              package = pkgs.gzip;
+              bins = [
+                { name = "gzip"; path = "${pkgs.gzip}/bin/gzip"; }
+              ];
+            }
+            {
+              label = "iperf3";
+              package = pkgs.iperf3;
+              bins = [
+                { name = "iperf3"; path = "${pkgs.iperf3}/bin/iperf3"; }
+              ];
+            }
+            {
+              label = "jq";
+              package = pkgs.jq;
+              bins = [
+                { name = "jq"; path = "${pkgs.jq}/bin/jq"; }
+              ];
+            }
+            {
+              label = "libarchive";
+              package = pkgs.libarchive;
+              bins = [
+                { name = "bsdtar"; path = "${pkgs.libarchive}/bin/bsdtar"; }
+              ];
+            }
+            {
+              label = "nmap";
+              package = pkgs.nmap;
+              bins = [
+                { name = "nmap"; path = "${pkgs.nmap}/bin/nmap"; }
+              ];
+            }
+            {
+              label = "nnn";
+              package = pkgs.nnn;
+              bins = [
+                { name = "nnn"; path = "${pkgs.nnn}/bin/.nnn-wrapped"; }
+              ];
+            }
+            {
+              label = "python2";
+              package = pkgs.python2;
+              bins = [
+                { name = "python2.7"; path = "${pkgs.python2}/bin/python2.7"; }
+              ];
+            }
+            {
+              label = "rclone";
+              package = pkgs.rclone;
+              bins = [
+                { name = "rclone"; path = "${pkgs.rclone}/bin/rclone"; }
+              ];
+            }
+            {
+              label = "ripgrep";
+              package = pkgs.ripgrep;
+              bins = [
+                { name = "rg"; path = "${pkgs.ripgrep}/bin/rg"; }
+              ];
+            }
+            {
+              label = "rsync";
+              package = pkgs.rsync;
+              bins = [
+                { name = "rsync"; path = "${pkgs.rsync}/bin/rsync"; }
+              ];
+            }
+            {
+              label = "socat";
+              package = pkgs.socat;
+              bins = [
+                { name = "socat"; path = "${pkgs.socat}/bin/socat"; }
+              ];
+            }
+            {
+              label = "sqlite";
+              package = pkgs.sqlite;
+              bins = [
+                { name = "sqlite3"; path = "${pkgs.sqlite}/bin/sqlite3"; }
+              ];
+            }
+            {
+              label = "strace";
+              package = pkgs.strace;
+              bins = [
+                { name = "strace"; path = "${pkgs.strace}/bin/strace"; }
+              ];
+            }
+            {
+              label = "tcpdump";
+              package = pkgs.tcpdump;
+              bins = [
+                { name = "tcpdump"; path = "${pkgs.tcpdump}/bin/tcpdump"; }
+              ];
+            }
+            {
+              label = "xz";
+              package = pkgs.xz;
+              bins = [
+                { name = "xz"; path = "${pkgs.xz}/bin/xz"; }
+              ];
+            }
+            {
+              label = "zstd";
+              package = pkgs.zstd;
+              bins = [
+                { name = "zstd"; path = "${pkgs.zstd}/bin/zstd"; }
+              ];
+            }
+          ];
+          releaseNotes = writeText "release.txt" (
+            lib.concatMapStringsSep "\n" (tool: "- ${tool.label} v${tool.package.version}") (tools pkgsStatic) + "\n"
+          );
+          copyTools = target: pkgs:
+            lib.concatMapStringsSep "\n"
+              (tool:
+                lib.concatMapStringsSep "\n"
+                  (bin: "cp ${bin.path} $out/bin/${bin.name}-${tool.package.version}-${target}")
+                  tool.bins)
+              (tools pkgs);
         in
         runCommand "static-binaries" { } ''
           mkdir -p $out/bin
 
-          cp ${pkgsCross.musl32.pkgsStatic.binutils}/bin/objdump $out/bin/objdump-x86
-          cp ${pkgsCross.musl32.pkgsStatic.binutils}/bin/strings $out/bin/strings-x86
-          cp ${pkgsCross.musl32.pkgsStatic.curl}/bin/curl $out/bin/curl-x86
-          cp ${pkgsCross.musl32.pkgsStatic.nmap}/bin/nmap $out/bin/nmap-x86
-          cp ${pkgsCross.musl32.pkgsStatic.nnn}/bin/.nnn-wrapped $out/bin/nnn-x86
-          cp ${pkgsCross.musl32.pkgsStatic.python2}/bin/python2.7 $out/bin/python2.7-x86
-          cp ${pkgsCross.musl32.pkgsStatic.socat}/bin/socat $out/bin/socat-x86
-          cp ${pkgsCross.musl32.pkgsStatic.tcpdump}/bin/tcpdump $out/bin/tcpdump-x86
-          cp ${pkgsCross.musl64.pkgsStatic.binutils}/bin/objdump $out/bin/objdump-x64
-          cp ${pkgsCross.musl64.pkgsStatic.binutils}/bin/strings $out/bin/strings-x64
-          cp ${pkgsCross.musl64.pkgsStatic.curl}/bin/curl $out/bin/curl-x64
-          cp ${pkgsCross.musl64.pkgsStatic.nmap}/bin/nmap $out/bin/nmap-x64
-          cp ${pkgsCross.musl64.pkgsStatic.nnn}/bin/.nnn-wrapped $out/bin/nnn-x64
-          cp ${pkgsCross.musl64.pkgsStatic.python2}/bin/python2.7 $out/bin/python2.7-x64
-          cp ${pkgsCross.musl64.pkgsStatic.socat}/bin/socat $out/bin/socat-x64
-          cp ${pkgsCross.musl64.pkgsStatic.tcpdump}/bin/tcpdump $out/bin/tcpdump-x64
+          ${copyTools "i686-unknown-linux-musl" pkgsCross.musl32.pkgsStatic}
+          ${copyTools "x86_64-unknown-linux-musl" pkgsCross.musl64.pkgsStatic}
+          ${copyTools "aarch64-unknown-linux-musl" pkgsCross.aarch64-multiplatform-musl.pkgsStatic}
 
           cp ${releaseNotes} $out/release.txt
         ''
